@@ -3,8 +3,14 @@ module termbox2::tb;
 const ushort TB_PATH_MAX = 4096;
 const String TB_VERSION_STR = "2.5.0-dev";
 
-/* TODO */
-/* Ensure sane `TB_OPT_ATTR_W` (16, 32, or 64) */
+/* 
+#if defined(TB_LIB_OPTS) || 0 // __tb_lib_opts 
+This is using the .a file compiled with 
+make make lib termbox2.h.lib, meaning it gets 
+set by default to 64
+@TODO: see if there is a way to make this more
+flexible and change the value 16/32/64
+*/
 const bool TB_OPT_EGC = true;
 const char TB_OPT_ATTR_W = 64;
 
@@ -65,7 +71,7 @@ const uint TB_KEY_SPACE =            0x20;
 const uint TB_KEY_BACKSPACE2 =       0x7f;
 const uint TB_KEY_CTRL_8 =           0x7f; // clash with 'BACKSPACE2'
 
-fn int tb_key_i(int i) { return 0xffff - i; };
+macro tb_key_i(int i) { return 0xffff - i; }
 /* Terminal-dependent key constants (`tb_event.key`) and terminfo caps */
 const uint TB_KEY_F1 =               (0xffff - 0);
 const uint TB_KEY_F2 =               (0xffff - 1);
@@ -168,6 +174,7 @@ const uint TB_WHITE =                0x0008;
 #define TB_DIM       0x8000
 #define TB_256_BLACK TB_HI_BLACK // `TB_256_BLACK` is deprecated
 */
+
 const uint TB_BOLD =                0x01000000;
 const uint TB_UNDERLINE =           0x02000000;
 const uint TB_REVERSE =             0x04000000;
@@ -183,6 +190,7 @@ const uint TB_TRUECOLOR_ITALIC =    TB_ITALIC;
 const uint TB_TRUECOLOR_BLINK =     TB_BLINK;
 const uint TB_TRUECOLOR_BLACK =     TB_HI_BLACK;
 
+// @TODO only set these @if(TB_OPT_ATTR_W == 64);
 const ulong TB_STRIKEOUT =   0x0000000100000000;
 const ulong TB_UNDERLINE_2 = 0x0000000200000000;
 const ulong TB_OVERLINE =    0x0000000400000000;
@@ -211,12 +219,13 @@ const char TB_OUTPUT_NORMAL =    1;
 const char TB_OUTPUT_256 =       2;
 const char TB_OUTPUT_216 =       3;
 const char TB_OUTPUT_GRAYSCALE = 4;
-/*
-@TODO:
+/* @TODO:
 #if TB_OPT_ATTR_W >= 32
 #define TB_OUTPUT_TRUECOLOR 5
 #endif
+we have defaulted to 64, we can define this
 */
+const char TB_OUTPUT_TRUECOLOR = 5;
 
 /* Common function return values unless otherwise noted.
  *
@@ -224,35 +233,347 @@ const char TB_OUTPUT_GRAYSCALE = 4;
  * attempt reinitializing by freeing memory, invoking `tb_shutdown`, then
  * `tb_init`.
 */
-const char TB_OK =                   0;
-const char TB_ERR =                  -1;
-const char TB_ERR_NEED_MORE =        -2;
-const char TB_ERR_INIT_ALREADY =     -3;
-const char TB_ERR_INIT_OPEN =        -4;
-const char TB_ERR_MEM =              -5;
-const char TB_ERR_NO_EVENT =         -6;
-const char TB_ERR_NO_TERM =          -7;
-const char TB_ERR_NOT_INIT =         -8;
-const char TB_ERR_OUT_OF_BOUNDS =    -9;
-const char TB_ERR_READ =             -10;
-const char TB_ERR_RESIZE_IOCTL =     -11;
-const char TB_ERR_RESIZE_PIPE =      -12;
-const char TB_ERR_RESIZE_SIGACTION = -13;
-const char TB_ERR_POLL =             -14;
-const char TB_ERR_TCGETATTR =        -15;
-const char TB_ERR_TCSETATTR =        -16;
-const char TB_ERR_UNSUPPORTED_TERM = -17;
-const char TB_ERR_RESIZE_WRITE =     -18;
-const char TB_ERR_RESIZE_POLL =      -19;
-const char TB_ERR_RESIZE_READ =      -20;
-const char TB_ERR_RESIZE_SSCANF =    -21;
-const char TB_ERR_CAP_COLLISION =    -22;
+const ichar TB_OK =                   0;
+const ichar TB_ERR =                  -1;
+const ichar TB_ERR_NEED_MORE =        -2;
+const ichar TB_ERR_INIT_ALREADY =     -3;
+const ichar TB_ERR_INIT_OPEN =        -4;
+const ichar TB_ERR_MEM =              -5;
+const ichar TB_ERR_NO_EVENT =         -6;
+const ichar TB_ERR_NO_TERM =          -7;
+const ichar TB_ERR_NOT_INIT =         -8;
+const ichar TB_ERR_OUT_OF_BOUNDS =    -9;
+const ichar TB_ERR_READ =             -10;
+const ichar TB_ERR_RESIZE_IOCTL =     -11;
+const ichar TB_ERR_RESIZE_PIPE =      -12;
+const ichar TB_ERR_RESIZE_SIGACTION = -13;
+const ichar TB_ERR_POLL =             -14;
+const ichar TB_ERR_TCGETATTR =        -15;
+const ichar TB_ERR_TCSETATTR =        -16;
+const ichar TB_ERR_UNSUPPORTED_TERM = -17;
+const ichar TB_ERR_RESIZE_WRITE =     -18;
+const ichar TB_ERR_RESIZE_POLL =      -19;
+const ichar TB_ERR_RESIZE_READ =      -20;
+const ichar TB_ERR_RESIZE_SSCANF =    -21;
+const ichar TB_ERR_CAP_COLLISION =    -22;
 
-const char TB_ERR_SELECT =           TB_ERR_POLL;
-const char TB_ERR_RESIZE_SELECT =    TB_ERR_RESIZE_POLL;
+const ichar TB_ERR_SELECT =           TB_ERR_POLL;
+const ichar TB_ERR_RESIZE_SELECT =    TB_ERR_RESIZE_POLL;
 
 /* Deprecated. Function types to be used with `tb_set_func`. */
 const char TB_FUNC_EXTRACT_PRE =     0;
 const char TB_FUNC_EXTRACT_POST =    1;
 
-// LOC: 379 
+/* Define these to swap in a different allocator */
+def tb_malloc = malloc;
+def tb_realloc = realloc;
+def tb_free = free;
+
+/*
+#if TB_OPT_ATTR_W == 64
+typedef uint64_t uintattr_t;
+#elif TB_OPT_ATTR_W == 32
+typedef uint32_t uintattr_t;
+#else // 16
+typedef uint16_t uintattr_t;
+#endif
+*/
+def Uintattr_t = long;
+
+/* A cell in a 2d grid representing the terminal screen.
+ *
+ * The terminal screen is represented as 2d array of cells. The structure is
+ * optimized for dealing with single-width (`wcwidth==1`) Unicode codepoints,
+ * however some support for grapheme clusters (e.g., combining diacritical
+ * marks) and wide codepoints (e.g., Hiragana) is provided through `ech`,
+ * `nech`, and `cech` via `tb_set_cell_ex`. `ech` is only valid when `nech>0`,
+ * otherwise `ch` is used.
+ *
+ * For non-single-width codepoints, given `N=wcwidth(ch)/wcswidth(ech)`:
+ *
+ * when `N==0`: termbox forces a single-width cell. Callers should avoid this
+ *              if aiming to render text accurately. Callers may use
+ *              `tb_set_cell_ex` or `tb_print*` to render `N==0` combining
+ *              characters.
+ *
+ *  when `N>1`: termbox zeroes out the following `N-1` cells and skips sending
+ *              them to the tty. So, e.g., if the caller sets `x=0,y=0` to an
+ *              `N==2` codepoint, the caller's next set should be at `x=2,y=0`.
+ *              Anything set at `x=1,y=0` will be ignored. If there are not
+ *              enough columns remaining on the line to render `N` width, spaces
+ *              are sent instead.
+ *
+ * See `tb_present` for implementation.
+ */
+struct Tb_cell {
+    uint ch;       // a Unicode codepoint
+    Uintattr_t fg; // bitwise foreground attributes
+    Uintattr_t bg; // bitwise background attributes
+    uint *ech;     // a grapheme cluster of Unicode codepoints, 0-terminated
+    int128 nech;   // num elements in ech, 0 means use ch instead of ech
+    int128 cech;   // num elements allocated for ech
+}
+
+/* An incoming event from the tty.
+ *
+ * Given the event type, the following fields are relevant:
+ *
+ *    when `TB_EVENT_KEY`: `key` xor `ch` (one will be zero) and `mod`. Note
+ *                         there is overlap between `TB_MOD_CTRL` and
+ *                         `TB_KEY_CTRL_*`. `TB_MOD_CTRL` and `TB_MOD_SHIFT` are
+ *                         only set as modifiers to `TB_KEY_ARROW_*`.
+ *
+ * when `TB_EVENT_RESIZE`: `w` and `h`
+ *
+ *  when `TB_EVENT_MOUSE`: `key` (`TB_KEY_MOUSE_*`), `x`, and `y`
+ */
+struct Tb_event {
+    char type; // one of `TB_EVENT_*` constants
+    char mod;  // bitwise `TB_MOD_*` constants
+    short key; // one of `TB_KEY_*` constants
+    uint ch;  // a Unicode codepoint
+    int w;    // resize width
+    int h;    // resize height
+    int x;    // mouse x
+    int y;    // mouse y
+}
+
+/* Initialize the termbox library. This function should be called before any
+ * other functions. `tb_init` is equivalent to `tb_init_file("/dev/tty")`. After
+ * successful initialization, the library must be finalized using `tb_shutdown`.
+ */
+extern fn int tb_init();
+extern fn int tb_init_file(String *path);
+extern fn int tb_init_fd(int ttyfd);
+extern fn int tb_init_rwfd(int rfd, int wfd);
+extern fn int tb_shutdown();
+
+/* Return the size of the internal back buffer (which is the same as terminal's
+ * window size in rows and columns). The internal buffer can be resized after
+ * `tb_clear` or `tb_present` calls. Both dimensions have an unspecified
+ * negative value when called before `tb_init` or after `tb_shutdown`.
+ */
+extern fn int tb_width();
+extern fn int tb_height();
+
+/* Clear the internal back buffer using `TB_DEFAULT` or the attributes set by
+ * `tb_set_clear_attrs`.
+ */
+extern fn int tb_clear();
+extern fn int tb_set_clear_attrs(Uintattr_t fg, Uintattr_t bg);
+
+/* Synchronize the internal back buffer with the terminal by writing to tty. */
+extern fn int tb_present();
+
+/* Clear the internal front buffer effectively forcing a complete re-render of
+ * the back buffer to the tty. It is not necessary to call this under normal
+ * circumstances. */
+extern fn int tb_invalidate();
+
+/* Set the position of the cursor. Upper-left cell is (0, 0). */
+extern fn int tb_set_cursor(int cx, int cy);
+extern fn int tb_hide_cursor();
+
+/* Set cell contents in the internal back buffer at the specified position.
+ *
+ * Use `tb_set_cell_ex` for rendering grapheme clusters (e.g., combining
+ * diacritical marks).
+ *
+ * Calling `tb_set_cell(x, y, ch, fg, bg)` is equivalent to
+ * `tb_set_cell_ex(x, y, &ch, 1, fg, bg)`.
+ *
+ * `tb_extend_cell` is a shortcut for appending 1 codepoint to `tb_cell.ech`.
+ *
+ * Non-printable (`iswprint(3)`) codepoints are replaced with `U+FFFD` at render
+ * time.
+ */
+extern fn int tb_set_cell(int x, int y, uint ch, Uintattr_t fg, Uintattr_t bg);
+extern fn int tb_set_cell_ex(int x, int y, uint *ch, int128 nch, Uintattr_t fg, Uintattr_t bg);
+extern fn int tb_extend_cell(int x, int y, uint ch);
+
+/* Set the input mode. Termbox has two input modes:
+ *
+ * 1. `TB_INPUT_ESC`
+ *    When escape (`\x1b`) is in the buffer and there's no match for an escape
+ *    sequence, a key event for `TB_KEY_ESC` is returned.
+ *
+ * 2. `TB_INPUT_ALT`
+ *    When escape (`\x1b`) is in the buffer and there's no match for an escape
+ *    sequence, the next keyboard event is returned with a `TB_MOD_ALT`
+ *    modifier.
+ *
+ * You can also apply `TB_INPUT_MOUSE` via bitwise OR operation to either of the
+ * modes (e.g., `TB_INPUT_ESC | TB_INPUT_MOUSE`) to receive `TB_EVENT_MOUSE`
+ * events. If none of the main two modes were set, but the mouse mode was,
+ * `TB_INPUT_ESC` is used. If for some reason you've decided to use
+ * `TB_INPUT_ESC | TB_INPUT_ALT`, it will behave as if only `TB_INPUT_ESC` was
+ * selected.
+ *
+ * If mode is `TB_INPUT_CURRENT`, return the current input mode.
+ *
+ * The default input mode is `TB_INPUT_ESC`.
+ */
+extern fn int tb_set_input_mode(int mode);
+
+/* Set the output mode. Termbox has multiple output modes:
+ *
+ * 1. `TB_OUTPUT_NORMAL`     => [0..8]
+ *
+ *    This mode provides 8 different colors:
+ *      `TB_BLACK`, `TB_RED`, `TB_GREEN`, `TB_YELLOW`,
+ *      `TB_BLUE`, `TB_MAGENTA`, `TB_CYAN`, `TB_WHITE`
+ *
+ *    Plus `TB_DEFAULT` which skips sending a color code (i.e., uses the
+ *    terminal's default color).
+ *
+ *    Colors (including `TB_DEFAULT`) may be bitwise OR'd with attributes:
+ *      `TB_BOLD`, `TB_UNDERLINE`, `TB_REVERSE`, `TB_ITALIC`, `TB_BLINK`,
+ *      `TB_BRIGHT`, `TB_DIM`
+ *
+ *    The following style attributes are also available if compiled with
+ *    `TB_OPT_ATTR_W` set to 64:
+ *      `TB_STRIKEOUT`, `TB_UNDERLINE_2`, `TB_OVERLINE`, `TB_INVISIBLE`
+ *
+ *    As in all modes, the value 0 is interpreted as `TB_DEFAULT` for
+ *    convenience.
+ *
+ *    Some notes: `TB_REVERSE` and `TB_BRIGHT` can be applied as either `fg` or
+ *    `bg` attributes for the same effect. The rest of the attributes apply to
+ *    `fg` only and are ignored as `bg` attributes.
+ *
+ *    Example usage: `tb_set_cell(x, y, '@', TB_BLACK | TB_BOLD, TB_RED)`
+ *
+ * 2. `TB_OUTPUT_256`        => [0..255] + `TB_HI_BLACK`
+ *
+ *    In this mode you get 256 distinct colors (plus default):
+ *                0x00   (1): `TB_DEFAULT`
+ *       `TB_HI_BLACK`   (1): `TB_BLACK` in `TB_OUTPUT_NORMAL`
+ *          0x01..0x07   (7): the next 7 colors as in `TB_OUTPUT_NORMAL`
+ *          0x08..0x0f   (8): bright versions of the above
+ *          0x10..0xe7 (216): 216 different colors
+ *          0xe8..0xff  (24): 24 different shades of gray
+ *
+ *    All `TB_*` style attributes except `TB_BRIGHT` may be bitwise OR'd as in
+ *    `TB_OUTPUT_NORMAL`.
+ *
+ *    Note `TB_HI_BLACK` must be used for black, as 0x00 represents default.
+ *
+ * 3. `TB_OUTPUT_216`        => [0..216]
+ *
+ *    This mode supports the 216-color range of `TB_OUTPUT_256` only, but you
+ *    don't need to provide an offset:
+ *                0x00   (1): `TB_DEFAULT`
+ *          0x01..0xd8 (216): 216 different colors
+ *
+ * 4. `TB_OUTPUT_GRAYSCALE`  => [0..24]
+ *
+ *    This mode supports the 24-color range of `TB_OUTPUT_256` only, but you
+ *    don't need to provide an offset:
+ *                0x00   (1): `TB_DEFAULT`
+ *          0x01..0x18  (24): 24 different shades of gray
+ *
+ * 5. `TB_OUTPUT_TRUECOLOR`  => [0x000000..0xffffff] + `TB_HI_BLACK`
+ *
+ *    This mode provides 24-bit color on supported terminals. The format is
+ *    0xRRGGBB.
+ *
+ *    All `TB_*` style attributes except `TB_BRIGHT` may be bitwise OR'd as in
+ *    `TB_OUTPUT_NORMAL`.
+ *
+ *    Note `TB_HI_BLACK` must be used for black, as 0x000000 represents default.
+ *
+ * To use the terminal default color (i.e., to not send an escape code), pass
+ * `TB_DEFAULT`. For convenience, the value 0 is interpreted as `TB_DEFAULT` in
+ * all modes.
+ *
+ * Note, cell attributes persist after switching output modes. Any translation
+ * between, for example, `TB_OUTPUT_NORMAL`'s `TB_RED` and
+ * `TB_OUTPUT_TRUECOLOR`'s 0xff0000 must be performed by the caller. Also note
+ * that cells previously rendered in one mode may persist unchanged until the
+ * front buffer is cleared (such as after a resize event) at which point it will
+ * be re-interpreted and flushed according to the current mode. Callers may
+ * invoke `tb_invalidate` if it is desirable to immediately re-interpret and
+ * flush the entire screen according to the current mode.
+ *
+ * Note, not all terminals support all output modes, especially beyond
+ * `TB_OUTPUT_NORMAL`. There is also no very reliable way to determine color
+ * support dynamically. If portability is desired, callers are recommended to
+ * use `TB_OUTPUT_NORMAL` or make output mode end-user configurable. The same
+ * advice applies to style attributes.
+ *
+ * If mode is `TB_OUTPUT_CURRENT`, return the current output mode.
+ *
+ * The default output mode is `TB_OUTPUT_NORMAL`.
+ */
+extern fn int tb_set_output_mode(int mode);
+
+/* Wait for an event up to `timeout_ms` milliseconds and populate `event` with
+ * it. If no event is available within the timeout period, `TB_ERR_NO_EVENT`
+ * is returned. On a resize event, the underlying `select(2)` call may be
+ * interrupted, yielding a return code of `TB_ERR_POLL`. In this case, you may
+ * check `errno` via `tb_last_errno`. If it's `EINTR`, you may elect to ignore
+ * that and call `tb_peek_event` again.
+ */
+extern fn int tb_peek_event(Tb_event *event, int timeout_ms);
+
+/* Same as `tb_peek_event` except no timeout. */
+extern fn int tb_poll_event(Tb_event *event);
+
+/* Internal termbox fds that can be used with `poll(2)`, `select(2)`, etc.
+ * externally. Callers must invoke `tb_poll_event` or `tb_peek_event` if
+ * fds become readable. */
+extern fn int tb_get_fds(int *ttyfd, int *resizefd);
+
+/* Print and printf functions. Specify param `out_w` to determine width of
+ * printed string. Strings are interpreted as UTF-8.
+ *
+ * Non-printable characters (`iswprint(3)`) and truncated UTF-8 byte sequences
+ * are replaced with U+FFFD.
+ *
+ * Newlines (`\n`) are supported with the caveat that `out_w` will return the
+ * width of the string as if it were on a single line.
+ *
+ * If the starting coordinate is out of bounds, `TB_ERR_OUT_OF_BOUNDS` is
+ * returned. If the starting coordinate is in bounds, but goes out of bounds,
+ * then the out-of-bounds portions of the string are ignored.
+ *
+ * For finer control, use `tb_set_cell`.
+ */
+extern fn int tb_print(int x, int y, Uintattr_t fg, Uintattr_t bg, String *str);
+extern fn int tb_printf(int x, int y, Uintattr_t fg, Uintattr_t bg, String *fmt, ...);
+extern fn int tb_print_ex(int x, int y, Uintattr_t fg, Uintattr_t bg, int128 *out_w, String *str);
+extern fn int tb_printf_ex(int x, int y, Uintattr_t fg, Uintattr_t bg, int128 *out_w, String *fmt, ...);
+
+/* Send raw bytes to terminal. */
+extern fn int tb_send(String *buf, int128 nbuf);
+extern fn int tb_sendf(String *fmt, ...);
+
+/* Return byte length of codepoint given first byte of UTF-8 sequence (1-6). */
+extern fn int tb_utf8_char_length(char c);
+
+/* Convert UTF-8 null-terminated byte sequence to UTF-32 codepoint.
+ *
+ * If `c` is an empty C string, return 0. `out` is left unchanged.
+ *
+ * If a null byte is encountered in the middle of the codepoint, return a
+ * negative number indicating how many bytes were processed. `out` is left
+ * unchanged.
+ *
+ * Otherwise, return byte length of codepoint (1-6).
+ */
+extern fn int tb_utf8_char_to_unicode(uint *out, String *c);
+
+/* Convert UTF-32 codepoint to UTF-8 null-terminated byte sequence.
+ *
+ * `out` must be char[7] or greater. Return byte length of codepoint (1-6).
+ */
+extern fn int tb_utf8_unicode_to_char(char *out, uint c);
+
+/* Library utility functions */
+extern fn int tb_last_errno();
+extern fn String *tb_strerror(int err);
+extern fn Tb_cell *tb_cell_buffer(); // Deprecated
+extern fn int tb_has_truecolor();
+extern fn int tb_has_egc();
+extern fn int tb_attr_width();
+extern fn String *tb_version();
