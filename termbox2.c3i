@@ -539,10 +539,10 @@ extern fn int tb_get_fds(int *ttyfd, int *resizefd);
  *
  * For finer control, use `tb_set_cell`.
  */
-extern fn int tb_print(int x, int y, Uintattr_t fg, Uintattr_t bg, String *str);
-extern fn int tb_printf(int x, int y, Uintattr_t fg, Uintattr_t bg, String *fmt, ...);
-extern fn int tb_print_ex(int x, int y, Uintattr_t fg, Uintattr_t bg, int128 *out_w, String *str);
-extern fn int tb_printf_ex(int x, int y, Uintattr_t fg, Uintattr_t bg, int128 *out_w, String *fmt, ...);
+extern fn int tb_print(int x, int y, Uintattr_t fg, Uintattr_t bg, char* str);
+extern fn int tb_printf(int x, int y, Uintattr_t fg, Uintattr_t bg, char* fmt, ...);
+extern fn int tb_print_ex(int x, int y, Uintattr_t fg, Uintattr_t bg, int128 *out_w, char* str);
+extern fn int tb_printf_ex(int x, int y, Uintattr_t fg, Uintattr_t bg, int128 *out_w, char* fmt, ...);
 
 /* Send raw bytes to terminal. */
 extern fn int tb_send(String *buf, int128 nbuf);
