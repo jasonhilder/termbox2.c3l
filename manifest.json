@@ -6,11 +6,6 @@
       "dependencies" : [],
       "linked-libraries" : []
     },
-    "macos-aarch64" : {
-      "link-args" : [],
-      "dependencies" : [],
-      "linked-libraries" : []
-    },
     "linux-x64" : {
       "link-args" : [ "./lib/termbox2.c3l/linux-x64/libtermbox2.a" ],
       "dependencies" : [],
@@ -20,8 +15,5 @@
         "linked-libraries" : [],
         "wincrt": "none"
     },
-    "wasm32" : {
-      "linked-libraries" : []
-    }
   }
 }
