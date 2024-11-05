@@ -1,6 +1,6 @@
 # termbox2.c3l
 
-C3 Bindings for the [termbox2](https://github.com/termbox/termbox2){:target="_blank"} C library. 
+C3 Bindings for the <a href='https://github.com/termbox/termbox2' target='_blank'>termbox2</a> C library.
 
 The binding function names should match up the same all that would be needed to change is prefixing it with the library module, ie. tb::tb_init();
 
@@ -41,6 +41,39 @@ TB_OPT_READ_BUF: Read buffer size for tty reads. Defaults to 64.
 TB_OPT_TRUECOLOR: Deprecated so I did not include it.
 
 These can be changed where they are defined to fit your needs at the top of the termbox.c3i file.
+
+### Example usage with project setup
+```
+module myproject;
+
+import termbox2::tb;
+
+fn void main()
+{
+    Tb_event ev;
+    int y = 0;
+
+    tb::tb_init();
+
+    tb::tb_printf(0, y++, tb::TB_RED, 0, "ATTR_W: %d", tb::TB_OPT_ATTR_W);
+    tb::tb_printf(0, y++, tb::TB_GREEN, 0, "hello from termbox");
+    tb::tb_printf(0, y++, 0, 0, "width=%d height=%d", tb::tb_width(), tb::tb_height());
+    tb::tb_printf(0, y++, 0, 0, "press any key...");
+
+    tb::tb_present();
+
+    tb::tb_poll_event(&ev);
+
+    y++;
+    tb::tb_printf(0, y++, 0, 0, "event type=%d key=%d ch=%c", ev.type, ev.key, ev.ch);
+    tb::tb_printf(0, y++, 0, 0, "press any key to quit...");
+    tb::tb_present();
+
+    tb::tb_poll_event(&ev);
+    tb::tb_shutdown();
+}
+
+```
 
 ### Still TODO
 * Add all the other .a compiled libraries for macOs and Windows.
