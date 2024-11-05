@@ -3,16 +3,7 @@ module termbox2::tb;
 const ushort TB_PATH_MAX = 4096;
 const String TB_VERSION_STR = "2.5.0-dev";
 
-/* 
-#if defined(TB_LIB_OPTS) || 0 // __tb_lib_opts 
-This is using the .a file compiled with 
-make make lib termbox2.h.lib, meaning it gets 
-set by default to 64
-@TODO: see if there is a way to make this more
-flexible and change the value 16/32/64
-*/
 const bool TB_OPT_EGC = true;
-const char TB_OPT_ATTR_W = 64;
 
 /* Define this to set the size of the buffer used in `tb_printf`
  * and `tb_sendf`
@@ -162,27 +153,6 @@ const uint TB_MAGENTA =              0x0006;
 const uint TB_CYAN =                 0x0007;
 const uint TB_WHITE =                0x0008;
 
-/*
-@TODO: handle TB_OPT_ATTR_W == 16
-#define TB_BOLD      0x0100
-#define TB_UNDERLINE 0x0200
-#define TB_REVERSE   0x0400
-#define TB_ITALIC    0x0800
-#define TB_BLINK     0x1000
-#define TB_HI_BLACK  0x2000
-#define TB_BRIGHT    0x4000
-#define TB_DIM       0x8000
-#define TB_256_BLACK TB_HI_BLACK // `TB_256_BLACK` is deprecated
-*/
-
-const uint TB_BOLD =                0x01000000;
-const uint TB_UNDERLINE =           0x02000000;
-const uint TB_REVERSE =             0x04000000;
-const uint TB_ITALIC =              0x08000000;
-const uint TB_BLINK =               0x10000000;
-const uint TB_HI_BLACK =            0x20000000;
-const uint TB_BRIGHT =              0x40000000;
-const uint TB_DIM =                 0x80000000;
 const uint TB_TRUECOLOR_BOLD =      TB_BOLD; // `TB_TRUECOLOR_*` is deprecated
 const uint TB_TRUECOLOR_UNDERLINE = TB_UNDERLINE;
 const uint TB_TRUECOLOR_REVERSE =   TB_REVERSE;
@@ -190,11 +160,6 @@ const uint TB_TRUECOLOR_ITALIC =    TB_ITALIC;
 const uint TB_TRUECOLOR_BLINK =     TB_BLINK;
 const uint TB_TRUECOLOR_BLACK =     TB_HI_BLACK;
 
-// @TODO only set these @if(TB_OPT_ATTR_W == 64);
-const ulong TB_STRIKEOUT =   0x0000000100000000;
-const ulong TB_UNDERLINE_2 = 0x0000000200000000;
-const ulong TB_OVERLINE =    0x0000000400000000;
-const ulong TB_INVISIBLE =   0x0000000800000000;
 
 /* Event types (`tb_event.type`) */
 const char TB_EVENT_KEY =        1;
@@ -219,13 +184,6 @@ const char TB_OUTPUT_NORMAL =    1;
 const char TB_OUTPUT_256 =       2;
 const char TB_OUTPUT_216 =       3;
 const char TB_OUTPUT_GRAYSCALE = 4;
-/* @TODO:
-#if TB_OPT_ATTR_W >= 32
-#define TB_OUTPUT_TRUECOLOR 5
-#endif
-we have defaulted to 64, we can define this
-*/
-const char TB_OUTPUT_TRUECOLOR = 5;
 
 /* Common function return values unless otherwise noted.
  *
@@ -268,17 +226,6 @@ const char TB_FUNC_EXTRACT_POST =    1;
 def tb_malloc = malloc;
 def tb_realloc = realloc;
 def tb_free = free;
-
-/*
-#if TB_OPT_ATTR_W == 64
-typedef uint64_t uintattr_t;
-#elif TB_OPT_ATTR_W == 32
-typedef uint32_t uintattr_t;
-#else // 16
-typedef uint16_t uintattr_t;
-#endif
-*/
-def Uintattr_t = long;
 
 /* A cell in a 2d grid representing the terminal screen.
  *
@@ -577,3 +524,57 @@ extern fn int tb_has_truecolor();
 extern fn int tb_has_egc();
 extern fn int tb_attr_width();
 extern fn String *tb_version();
+
+//-------------------------------------------
+// Handle different conditional options
+//-------------------------------------------
+
+module termbox2::tb @if(!$defined(TB_OPT_ATTR_W));
+const char TB_OPT_ATTR_W = 64;
+
+// 64
+module termbox2::tb @if(TB_OPT_ATTR_W == 64);
+def Uintattr_t = long;
+const uint TB_BOLD =                0x01000000;
+const uint TB_UNDERLINE =           0x02000000;
+const uint TB_REVERSE =             0x04000000;
+const uint TB_ITALIC =              0x08000000;
+const uint TB_BLINK =               0x10000000;
+const uint TB_HI_BLACK =            0x20000000;
+const uint TB_BRIGHT =              0x40000000;
+const uint TB_DIM =                 0x80000000;
+
+const ulong TB_STRIKEOUT =   0x0000000100000000;
+const ulong TB_UNDERLINE_2 = 0x0000000200000000;
+const ulong TB_OVERLINE =    0x0000000400000000;
+const ulong TB_INVISIBLE =   0x0000000800000000;
+
+const char TB_OUTPUT_TRUECOLOR = 5;
+
+// 32
+module termbox2::tb @if(TB_OPT_ATTR_W == 32);
+def Uintattr_t = int;
+
+const uint TB_BOLD =                0x01000000;
+const uint TB_UNDERLINE =           0x02000000;
+const uint TB_REVERSE =             0x04000000;
+const uint TB_ITALIC =              0x08000000;
+const uint TB_BLINK =               0x10000000;
+const uint TB_HI_BLACK =            0x20000000;
+const uint TB_BRIGHT =              0x40000000;
+const uint TB_DIM =                 0x80000000;
+
+const char TB_OUTPUT_TRUECOLOR = 5;
+
+//16
+module termbox2::tb @if(TB_OPT_ATTR_W == 16);
+def Uintattr_t = short;
+const uint TB_BOLD =      0x0100;
+const uint TB_UNDERLINE = 0x0200;
+const uint TB_REVERSE =   0x0400;
+const uint TB_ITALIC =    0x0800;
+const uint TB_BLINK =     0x1000;
+const uint TB_HI_BLACK =  0x2000;
+const uint TB_BRIGHT =    0x4000;
+const uint TB_DIM =       0x8000;
+const uint TB_256_BLACK = TB_HI_BLACK; // `TB_256_BLACK` is deprecated
