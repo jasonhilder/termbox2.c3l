@@ -18,16 +18,17 @@ git clone git@github.com:jasonhilder/termbox2.c3l.git
 ```
 "dependencies": [ "termbox2" ],
 ```
+
+### Configurable Lib Options
+
 Please note, termbox2 has the following compile time options: 
 
 **TB_OPT_ATTR_W**:\
 Integer width of fg and bg attributes. Valid values
-(assuming system support) are 16, 32, and 64. (See
-uintattr_t). 32 or 64 enables output mode
+(assuming system support) are 16, 32, and 64. 32 or 64 enables output mode
 TB_OUTPUT_TRUECOLOR. 64 enables additional style
 attributes. (See tb_set_output_mode.) Larger values
 consume more memory in exchange for more features.
-Defaults to 16.
 
 **TB_OPT_EGC**:\
 If set, enable extended grapheme cluster support
