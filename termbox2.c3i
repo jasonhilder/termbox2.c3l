@@ -1,19 +1,31 @@
 module termbox2::tb;
 
-const ushort TB_PATH_MAX = 4096;
 const String TB_VERSION_STR = "2.5.0-dev";
 
-const bool TB_OPT_EGC = true;
+//-------------------------------------------
+// Configurable Options Start
+//-------------------------------------------
 
-/* Define this to set the size of the buffer used in `tb_printf`
- * and `tb_sendf`
-*/
+// Increase path size if needed
+const ushort TB_PATH_MAX = 4096;
+
+// Change to 64/32/16 if needed
+const char TB_OPT_ATTR_W = 64;
+
+// Enable extended grapheme cluster support, consumes more memory.
+const bool TB_OPT_EGC = false;
+
+// Define this to set the size of the buffer used in `tb_printf` and `tb_sendf
+// Increase if needed
 const int TB_OPT_PRINTF_BUF = 4096;
 
-/* Define this to set the size of the read buffer used when reading
- * from the tty
-*/
+// Define this to set the size of the read buffer used when reading from the tty
+// Increase if needed
 const int TB_OPT_READ_BUF = 64;
+
+//-------------------------------------------
+// Configurable Options End
+//-------------------------------------------
 
 /* ASCII key constants (`tb_event.key`) */
 const uint TB_KEY_CTRL_TILDE =       0x00;
@@ -152,13 +164,6 @@ const uint TB_BLUE =                 0x0005;
 const uint TB_MAGENTA =              0x0006;
 const uint TB_CYAN =                 0x0007;
 const uint TB_WHITE =                0x0008;
-
-const uint TB_TRUECOLOR_BOLD =      TB_BOLD; // `TB_TRUECOLOR_*` is deprecated
-const uint TB_TRUECOLOR_UNDERLINE = TB_UNDERLINE;
-const uint TB_TRUECOLOR_REVERSE =   TB_REVERSE;
-const uint TB_TRUECOLOR_ITALIC =    TB_ITALIC;
-const uint TB_TRUECOLOR_BLINK =     TB_BLINK;
-const uint TB_TRUECOLOR_BLACK =     TB_HI_BLACK;
 
 
 /* Event types (`tb_event.type`) */
@@ -529,9 +534,6 @@ extern fn String *tb_version();
 // Handle different conditional options
 //-------------------------------------------
 
-module termbox2::tb @if(!$defined(TB_OPT_ATTR_W));
-const char TB_OPT_ATTR_W = 64;
-
 // 64
 module termbox2::tb @if(TB_OPT_ATTR_W == 64);
 def Uintattr_t = long;
@@ -543,6 +545,12 @@ const uint TB_BLINK =               0x10000000;
 const uint TB_HI_BLACK =            0x20000000;
 const uint TB_BRIGHT =              0x40000000;
 const uint TB_DIM =                 0x80000000;
+const uint TB_TRUECOLOR_BOLD =      TB_BOLD; // `TB_TRUECOLOR_*` is deprecated
+const uint TB_TRUECOLOR_UNDERLINE = TB_UNDERLINE;
+const uint TB_TRUECOLOR_REVERSE =   TB_REVERSE;
+const uint TB_TRUECOLOR_ITALIC =    TB_ITALIC;
+const uint TB_TRUECOLOR_BLINK =     TB_BLINK;
+const uint TB_TRUECOLOR_BLACK =     TB_HI_BLACK;
 
 const ulong TB_STRIKEOUT =   0x0000000100000000;
 const ulong TB_UNDERLINE_2 = 0x0000000200000000;
@@ -563,6 +571,12 @@ const uint TB_BLINK =               0x10000000;
 const uint TB_HI_BLACK =            0x20000000;
 const uint TB_BRIGHT =              0x40000000;
 const uint TB_DIM =                 0x80000000;
+const uint TB_TRUECOLOR_BOLD =      TB_BOLD; // `TB_TRUECOLOR_*` is deprecated
+const uint TB_TRUECOLOR_UNDERLINE = TB_UNDERLINE;
+const uint TB_TRUECOLOR_REVERSE =   TB_REVERSE;
+const uint TB_TRUECOLOR_ITALIC =    TB_ITALIC;
+const uint TB_TRUECOLOR_BLINK =     TB_BLINK;
+const uint TB_TRUECOLOR_BLACK =     TB_HI_BLACK;
 
 const char TB_OUTPUT_TRUECOLOR = 5;
 
