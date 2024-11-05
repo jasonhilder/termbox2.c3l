@@ -9,7 +9,13 @@ I have packaged and set up the bindings to make use of the termbox static librar
 ### Setup
 
 * Init a c3c project
+```
+c3c init myproject
+```
 * Change directory to project lib folder
+```
+cd myproject && cd lib
+```
 * Clone this library repo:
 ```
 git clone git@github.com:jasonhilder/termbox2.c3l.git
