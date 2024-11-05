@@ -46,10 +46,10 @@ Write buffer size for printf operations. Represents the
 largest string that can be sent in one call to tb_print*
 and tb_send* functions. Defaults to 4096.
 
-**TB_OPT_READ_BUF**:\ 
+**TB_OPT_READ_BUF**:\
 Read buffer size for tty reads. Defaults to 64.
 
-**TB_OPT_TRUECOLOR**:\ 
+**TB_OPT_TRUECOLOR**:\
 Deprecated so I did not include it.
 
 These can be changed where they are defined to fit your needs at the top of the <a href='https://github.com/jasonhilder/termbox2.c3l/blob/main/termbox2.c3i' target='_blank'>termbox.c3i file</a>.
