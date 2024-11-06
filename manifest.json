@@ -4,7 +4,7 @@
     "macos-x64" : {
       "link-args" : [],
       "dependencies" : [],
-      "linked-libraries" : []
+    "link-args" : [ "./lib/termbox2.c3l/macos-x64/libtermbox2.a" ]
     },
     "linux-x64" : {
       "link-args" : [ "./lib/termbox2.c3l/linux-x64/libtermbox2.a" ],
@@ -12,7 +12,7 @@
       "linked-libraries" : []
     },
     "windows-x64" : {
-        "linked-libraries" : [],
+        "link-args" : [ "./lib/termbox2.c3l/windows-x64/libtermbox2.a" ],
         "wincrt": "none"
     },
   }
